@@ -40,13 +40,14 @@ namespace BusBoard.Api
 
         private static Location GetLocationFromPostCode(string postCode)
         {
-            var jsonResponse = GetJsonResponse(@"https://api.postcodes.io/postcodes/" + postCode);
+            var jsonResponse =
+                GetJsonResponse(@"https://api.postcodes.io/postcodes/" + postCode + "?api_key=" + PrimaryKey);
 
             if (jsonResponse == null)
             {
                 return null;
             }
-            
+
             var postCodeDetailsJson = JObject.Parse(jsonResponse)["result"];
 
             var longitude = (double)postCodeDetailsJson["longitude"];
@@ -56,7 +57,8 @@ namespace BusBoard.Api
 
         private static List<string> GetStopTypes(string type)
         {
-            var jsonResponse = GetJsonResponse(@"https://api.tfl.gov.uk/StopPoint/Meta/StopTypes");
+            var jsonResponse =
+                GetJsonResponse(@"https://api.tfl.gov.uk/StopPoint/Meta/StopTypes?api_key=" + PrimaryKey);
 
             var stopTypesJson = JArray.Parse(jsonResponse);
             var stopTypes = stopTypesJson.Select(stopType => (string)stopType);
@@ -182,14 +184,14 @@ namespace BusBoard.Api
             {
                 return null;
             }
-            
+
             var stations = GetClosestStopPointsFromLocation(location, 2);
 
             foreach (var station in stations)
             {
                 station.IncomingBusses = GetIncomingBusesStopPoint(station.NaptanId, 5);
             }
-            
+
             return stations;
         }
     }
