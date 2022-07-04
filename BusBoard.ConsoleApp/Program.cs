@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
 namespace BusBoard.ConsoleApp
@@ -13,43 +11,130 @@ namespace BusBoard.ConsoleApp
     {
         private const string PrimaryKey = "1056f6a94b6e44b48368f54a155429a3";
 
+        private static string GetJsonResponse(string url)
+        {
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            var responseJson = string.Empty;
+            using (var response = (HttpWebResponse)request.GetResponse())
+            using (var stream = response.GetResponseStream())
+            using (var reader = new StreamReader(stream))
+            {
+                responseJson = reader.ReadToEnd();
+            }
+
+            return responseJson;
+        }
+
         private static string GetStopPointUrl(string id)
         {
             return @"https://api.tfl.gov.uk/StopPoint/" + id + "/Arrivals" + "?api_key=" + PrimaryKey;
         }
 
-        private static string GetStopPointResponse(string requestUrl)
+        private static Location GetLocationFromPostCode(string postCode)
         {
-            var html = string.Empty;
-            var request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            var jsonResponse = GetJsonResponse(@"https://api.postcodes.io/postcodes/" + postCode);
+            var postCodeDetailsJson = JObject.Parse(jsonResponse)["result"];
 
-            using (var response = (HttpWebResponse)request.GetResponse())
-            using (var stream = response.GetResponseStream())
-            using (var reader = new StreamReader(stream))
-            {
-                html = reader.ReadToEnd();
-            }
-
-            return html;
+            var longitude = (double)postCodeDetailsJson["longitude"];
+            var latitude = (double)postCodeDetailsJson["latitude"];
+            return new Location(longitude, latitude);
         }
 
-        static void Main(string[] args)
+        private static List<string> GetStopTypes(string type)
         {
-            var id = "490015367S"; //Console.ReadLine();
-            var jsonResponse = GetStopPointResponse(GetStopPointUrl(id));
+            var jsonResponse = GetJsonResponse(@"https://api.tfl.gov.uk/StopPoint/Meta/StopTypes");
+
+            var stopTypesJson = JArray.Parse(jsonResponse);
+            var stopTypes = stopTypesJson.Select(stopType => (string)stopType);
+
+            return stopTypes.Where(stopType => stopType.Contains(type)).ToList();
+        }
+
+        private static List<Station> GetClosestStopPointsFromLocation(Location location, int maxCount)
+        {
+            var stations = new List<Station>();
+            var stopTypes = GetStopTypes("Bus");
+            var stopTypesUrlList = String.Join(",", stopTypes.ToArray());
+
+            var url = @"https://api.tfl.gov.uk/StopPoint/";
+            url += "?lat=" + location.Latitude;
+            url += "&lon=" + location.Longitude;
+            url += "&stopTypes=" + stopTypesUrlList;
+
+            var jsonResponse = GetJsonResponse(url);
+
+            var stopPoints = (JArray)JObject.Parse(jsonResponse)["stopPoints"];
+
+            if (stopPoints == null || !stopPoints.HasValues)
+            {
+                return null;
+            }
+
+            if (stopPoints.Count < maxCount)
+            {
+                maxCount = stopPoints.Count;
+            }
+
+            foreach (var stopPoint in stopPoints.ToList().GetRange(0, maxCount))
+            {
+                stations.AddRange(GetStationsFromStopPoint(stopPoint));
+            }
+
+            return stations;
+        }
+
+        private static List<Station> GetStationsFromStopPoint(JToken stopPoint)
+        {
+            var stations = new List<Station>();
+            var stationsJson = stopPoint["children"].ToList();
+
+            foreach (var station in stationsJson)
+            {
+                var naptanId = (string)station["naptanId"];
+                var indicator = (string)station["indicator"];
+                var name = (string)station["commonName"];
+
+                stations.Add(new Station(naptanId, indicator, name));
+            }
+
+            return stations;
+        }
+
+        private static void PrintIncomingBuses(string stopPoint, int maxCount)
+        {
+            var jsonResponse = GetJsonResponse(GetStopPointUrl(stopPoint));
 
             var arrivalPredictionsJson = JArray.Parse(jsonResponse);
 
-            IList<ArrivalPrediction> arrivalPredictions = arrivalPredictionsJson.Select(p => new ArrivalPrediction
+            var arrivalPredictions = arrivalPredictionsJson.Select(p => new ArrivalPrediction
             {
                 DestinationName = (string)p["destinationName"],
                 LineId = (string)p["lineId"],
                 TimeToStation = (int)p["timeToStation"]
-            }).OrderBy(arrivalPrediction => arrivalPrediction.TimeToStation).ToList().GetRange(0, 5);
+            }).OrderBy(arrivalPrediction => arrivalPrediction.TimeToStation).ToList();
+
+            if (arrivalPredictions.Count > maxCount)
+            {
+                arrivalPredictions = arrivalPredictions.GetRange(0, maxCount);
+            }
 
             foreach (var arrivalPrediction in arrivalPredictions)
             {
                 Console.WriteLine(arrivalPrediction.ToString());
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            var postCode = "NW5 1TL"; //Console.ReadLine();
+            var location = GetLocationFromPostCode(postCode);
+
+            var stations = GetClosestStopPointsFromLocation(location, 2);
+            foreach (var station in stations)
+            {
+                Console.WriteLine(station.Name + " (" + station.Indicator + ")");
+                PrintIncomingBuses(station.NaptanId, 5);
+                Console.WriteLine();
             }
         }
     }
