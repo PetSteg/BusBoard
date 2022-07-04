@@ -7,4 +7,18 @@
 
 <div class="row">
     <p>You entered postcode @Model.PostCode</p>
+    
+    <ul>
+    @foreach (var station in Model.StationList)
+    {
+        <li>@station.Name</li>
+        
+        <ul>
+        @foreach (var bus in station.IncomingBusses)
+        {
+            <li>@bus.LineId | @bus.DestinationName in @bus.ExpectedArrivalMinutes()</li>
+        }
+        </ul>
+    }
+    </ul>
 </div>

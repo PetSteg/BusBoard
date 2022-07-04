@@ -6,7 +6,7 @@ namespace BusBoard.Api
         public string LineId { get; set; }
         public int TimeToStation { get; set; }
 
-        private string ExpectedArrivalMinutes()
+        public string ExpectedArrivalMinutes()
         {
             var minutes = TimeToStation / 60;
 
@@ -23,7 +23,7 @@ namespace BusBoard.Api
 
         public override string ToString()
         {
-            return "Line " + LineId + ": " + DestinationName + " in " + ExpectedArrivalMinutes();
+            return "Line " + LineId + ": " + DestinationName + " in " + ExpectedArrivalMinutes() + "\n";
         }
     }
 }

@@ -100,8 +100,9 @@ namespace BusBoard.Api
             return stations;
         }
 
-        private static void PrintIncomingBusesStopPoint(string stopPoint, int maxCount)
+        private static string PrintIncomingBusesStopPoint(string stopPoint, int maxCount)
         {
+            var incomingBuses = "";
             var jsonResponse = GetJsonResponse(GetStopPointUrl(stopPoint));
 
             var arrivalPredictionsJson = JArray.Parse(jsonResponse);
@@ -120,8 +121,31 @@ namespace BusBoard.Api
 
             foreach (var arrivalPrediction in arrivalPredictions)
             {
-                Console.WriteLine(arrivalPrediction.ToString());
+                incomingBuses += (arrivalPrediction.ToString());
             }
+
+            return incomingBuses;
+        }
+
+        private static List<ArrivalPrediction> GetIncomingBusesStopPoint(string stopPoint, int maxCount)
+        {
+            var jsonResponse = GetJsonResponse(GetStopPointUrl(stopPoint));
+
+            var arrivalPredictionsJson = JArray.Parse(jsonResponse);
+
+            var arrivalPredictions = arrivalPredictionsJson.Select(p => new ArrivalPrediction
+            {
+                DestinationName = (string)p["destinationName"],
+                LineId = (string)p["lineId"],
+                TimeToStation = (int)p["timeToStation"]
+            }).OrderBy(arrivalPrediction => arrivalPrediction.TimeToStation).ToList();
+
+            if (arrivalPredictions.Count > maxCount)
+            {
+                arrivalPredictions = arrivalPredictions.GetRange(0, maxCount);
+            }
+
+            return arrivalPredictions;
         }
 
         public static void PrintIncomingBusesPostCode(string postCode)
@@ -132,9 +156,22 @@ namespace BusBoard.Api
             foreach (var station in stations)
             {
                 Console.WriteLine(station.Name + " (" + station.Indicator + ")");
-                PrintIncomingBusesStopPoint(station.NaptanId, 5);
+                Console.WriteLine(PrintIncomingBusesStopPoint(station.NaptanId, 5));
                 Console.WriteLine();
             }
+        }
+
+        public static List<Station> GetStationsWithIncomingBusesPostCode(string postCode)
+        {
+            var location = GetLocationFromPostCode(postCode);
+            var stations = GetClosestStopPointsFromLocation(location, 2);
+
+            foreach (var station in stations)
+            {
+                station.IncomingBusses = GetIncomingBusesStopPoint(station.NaptanId, 5);
+            }
+            
+            return stations;
         }
     }
 }
