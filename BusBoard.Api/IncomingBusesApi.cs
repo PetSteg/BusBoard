@@ -72,10 +72,8 @@ namespace BusBoard.Api
             var stopTypes = GetStopTypes("Bus");
             var stopTypesUrlList = String.Join(",", stopTypes.ToArray());
 
-            var url = @"https://api.tfl.gov.uk/StopPoint/";
-            url += "?lat=" + location.Latitude;
-            url += "&lon=" + location.Longitude;
-            url += "&stopTypes=" + stopTypesUrlList;
+            var url =
+                $@"https://api.tfl.gov.uk/StopPoint/?lat={location.Latitude}&lon={location.Longitude}&stopTypes={stopTypesUrlList}";
 
             var jsonResponse = GetJsonResponse(url);
             var stopPoints = (JArray)JObject.Parse(jsonResponse)["stopPoints"];
