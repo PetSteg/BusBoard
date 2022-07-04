@@ -1,24 +1,36 @@
 ﻿@model BusBoard.Web.ViewModels.BusInfo
 @{
-  ViewBag.Title = "Bus Information";
+    ViewBag.Title = "Bus Information";
 }
 
 <h2>BusInfo</h2>
 
 <div class="row">
     <p>You entered postcode @Model.PostCode</p>
-    
-    <ul>
-    @foreach (var station in Model.StationList)
+
+    @try
     {
-        <li>@station.Name</li>
-        
         <ul>
-        @foreach (var bus in station.IncomingBusses)
-        {
-            <li>@bus.LineId | @bus.DestinationName in @bus.ExpectedArrivalMinutes()</li>
-        }
+            @foreach (var station in Model.StationList)
+            {
+                <li class="station-name">@station.Name</li>
+                <table>
+                    @foreach (var bus in station.IncomingBusses)
+                    {
+                        <tr>
+                            <td class="line-starter"><p class="inside-line-starter">@bus.LineId</p></td>
+                            <td style="display: flex; height:  50px">
+                                <div class="left-item item">@bus.DestinationName</div>
+                                <div class="right-item item">@bus.ExpectedArrivalMinutes()</div>
+                            </td>
+                        </tr>
+                    }
+                </table>
+            }
         </ul>
     }
-    </ul>
+    catch (Exception e)
+    {
+        <div>Entered postcode is invalid</div>
+    }
 </div>

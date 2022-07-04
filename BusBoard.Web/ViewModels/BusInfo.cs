@@ -8,6 +8,7 @@ namespace BusBoard.Web.ViewModels
         public BusInfo(string postCode)
         {
             PostCode = postCode;
+            StationList = new List<Station>();
         }
 
         public string PostCode { get; set; }

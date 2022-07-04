@@ -15,14 +15,22 @@ namespace BusBoard.Api
         {
             var request = (HttpWebRequest)WebRequest.Create(url);
             var responseJson = string.Empty;
-            using (var response = (HttpWebResponse)request.GetResponse())
-            using (var stream = response.GetResponseStream())
-            using (var reader = new StreamReader(stream))
-            {
-                responseJson = reader.ReadToEnd();
-            }
 
-            return responseJson;
+            try
+            {
+                using (var response = (HttpWebResponse)request.GetResponse())
+                using (var stream = response.GetResponseStream())
+                using (var reader = new StreamReader(stream))
+                {
+                    responseJson = reader.ReadToEnd();
+                }
+
+                return responseJson;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         private static string GetStopPointUrl(string id)
@@ -33,6 +41,12 @@ namespace BusBoard.Api
         private static Location GetLocationFromPostCode(string postCode)
         {
             var jsonResponse = GetJsonResponse(@"https://api.postcodes.io/postcodes/" + postCode);
+
+            if (jsonResponse == null)
+            {
+                return null;
+            }
+            
             var postCodeDetailsJson = JObject.Parse(jsonResponse)["result"];
 
             var longitude = (double)postCodeDetailsJson["longitude"];
@@ -164,6 +178,12 @@ namespace BusBoard.Api
         public static List<Station> GetStationsWithIncomingBusesPostCode(string postCode)
         {
             var location = GetLocationFromPostCode(postCode);
+
+            if (location == null)
+            {
+                return null;
+            }
+            
             var stations = GetClosestStopPointsFromLocation(location, 2);
 
             foreach (var station in stations)
