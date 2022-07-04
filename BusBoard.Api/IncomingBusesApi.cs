@@ -35,13 +35,12 @@ namespace BusBoard.Api
 
         private static string GetStopPointUrl(string id)
         {
-            return @"https://api.tfl.gov.uk/StopPoint/" + id + "/Arrivals" + "?api_key=" + PrimaryKey;
+            return $@"https://api.tfl.gov.uk/StopPoint/{id}/Arrivals?api_key={PrimaryKey}";
         }
 
         private static Location GetLocationFromPostCode(string postCode)
         {
-            var jsonResponse =
-                GetJsonResponse(@"https://api.postcodes.io/postcodes/" + postCode + "?api_key=" + PrimaryKey);
+            var jsonResponse = GetJsonResponse($@"https://api.postcodes.io/postcodes/{postCode}?api_key={PrimaryKey}");
 
             if (jsonResponse == null)
             {
@@ -58,7 +57,7 @@ namespace BusBoard.Api
         private static List<string> GetStopTypes(string type)
         {
             var jsonResponse =
-                GetJsonResponse(@"https://api.tfl.gov.uk/StopPoint/Meta/StopTypes?api_key=" + PrimaryKey);
+                GetJsonResponse($@"https://api.tfl.gov.uk/StopPoint/Meta/StopTypes?api_key={PrimaryKey}");
 
             var stopTypesJson = JArray.Parse(jsonResponse);
             var stopTypes = stopTypesJson.Select(stopType => (string)stopType);
