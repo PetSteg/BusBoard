@@ -100,7 +100,7 @@ namespace BusBoard.ConsoleApp
             return stations;
         }
 
-        private static void PrintIncomingBuses(string stopPoint, int maxCount)
+        private static void PrintIncomingBusesStopPoint(string stopPoint, int maxCount)
         {
             var jsonResponse = GetJsonResponse(GetStopPointUrl(stopPoint));
 
@@ -124,18 +124,23 @@ namespace BusBoard.ConsoleApp
             }
         }
 
-        static void Main(string[] args)
+        private static void PrintIncomingBusesPostCode(string postCode)
         {
-            var postCode = "NW5 1TL"; //Console.ReadLine();
             var location = GetLocationFromPostCode(postCode);
 
             var stations = GetClosestStopPointsFromLocation(location, 2);
             foreach (var station in stations)
             {
                 Console.WriteLine(station.Name + " (" + station.Indicator + ")");
-                PrintIncomingBuses(station.NaptanId, 5);
+                PrintIncomingBusesStopPoint(station.NaptanId, 5);
                 Console.WriteLine();
             }
+        }
+
+        static void Main(string[] args)
+        {
+            var postCode = "NW5 1TL"; //Console.ReadLine();
+            PrintIncomingBusesPostCode(postCode);
         }
     }
 }
