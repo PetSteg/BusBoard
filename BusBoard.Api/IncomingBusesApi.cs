@@ -76,7 +76,6 @@ namespace BusBoard.Api
             url += "&stopTypes=" + stopTypesUrlList;
 
             var jsonResponse = GetJsonResponse(url);
-
             var stopPoints = (JArray)JObject.Parse(jsonResponse)["stopPoints"];
 
             if (stopPoints == null || !stopPoints.HasValues)
